@@ -1,0 +1,67 @@
+#This program will read state-wide VOC and NOx emissions values for 10 years from a spreadsheet and use a 
+#10-year weighted moving average to forecast the emissions five years into the future
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+df = pd.read_excel('Whole_State_Data2.xlsx')  
+
+
+years = df['Year'].tolist()
+voc_emissions = df['VOC'].tolist()
+nox_emissions = df['NOx'].tolist()
+
+
+weights = [0.182, 0.164, 0.145, 0.127, 0.109, 0.091, 0.073, 0.055, 0.036, 0.018]
+
+
+def weighted_moving_average(data, weights):
+
+    weighted_sum = 0
+    for i in range(len(weights)):
+        weighted_sum += data[-(i + 1)] * weights[i]
+        print(data)
+        print(weights)
+        print(weighted_sum)
+        
+       
+    return weighted_sum
+
+
+for year in range(2023, 2029):
+    voc_prediction = weighted_moving_average(voc_emissions[-len(weights):], weights)
+    nox_prediction = weighted_moving_average(nox_emissions[-len(weights):], weights)
+
+   
+    years.append(year)
+    voc_emissions.append(voc_prediction)
+    nox_emissions.append(nox_prediction)
+
+    print(f"Predicted VOC emissions for {year}: {voc_prediction}")
+    print(f"Predicted NOx emissions for {year}: {nox_prediction}")
+
+
+df_new = pd.DataFrame({'Year': years, 'VOC': voc_emissions, 'NOx': nox_emissions})
+
+
+df_new.to_excel('emissions_data_forecast.xlsx', index=False)
+print("Forecasted data saved successfully.")
+
+df = pd.read_excel('emissions_data_forecast.xlsx')
+filtered_data = df[(df['Year'] >= 2013) & (df['Year'] <= 2028)]
+
+
+voc_data = filtered_data['VOC']
+nox_data = filtered_data['NOx']
+
+years = filtered_data['Year']
+plt.figure(figsize=(10, 6))
+plt.plot(years, voc_data, label='VOC')
+plt.plot(years, nox_data, label='NOx')
+plt.xlabel('Year')
+plt.ylabel('Emissions')
+plt.title('VOC and NOx Emissions vs Time (2008-2028)')
+plt.legend()
+plt.grid(True)
+plt.show()
